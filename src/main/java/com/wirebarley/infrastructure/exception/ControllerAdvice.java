@@ -22,4 +22,16 @@ public class ControllerAdvice {
                         )
                 );
     }
+
+    @ExceptionHandler(CustomException.class)
+    public ResponseEntity<ApiResponse<Object>> CustomException(CustomException e) {
+        return ResponseEntity.badRequest()
+                .body(
+                        ApiResponse.fail(
+                                HttpStatus.BAD_REQUEST,
+                                e.getMessage(),
+                                null
+                        )
+                );
+    }
 }

@@ -23,6 +23,10 @@ public class ApiResponse<T> {
         return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK, "success", data));
     }
 
+    public static ResponseEntity<ApiResponse<String>> ok() {
+        return ResponseEntity.ok(new ApiResponse<>(HttpStatus.OK, "success", "ok"));
+    }
+
     public static <T> ResponseEntity<ApiResponse<T>> created(T data) {
         return new ResponseEntity<>(new ApiResponse<>(HttpStatus.CREATED, "success", data), HttpStatus.CREATED);
     }
