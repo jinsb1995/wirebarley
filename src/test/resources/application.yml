@@ -1,0 +1,28 @@
+
+spring:
+  profiles:
+    default: test
+
+  datasource:
+    url: jdbc:h2:mem:~/wirebarley
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
+
+  jpa:
+    hibernate:
+      ddl-auto: create-drop
+    show-sql: true
+    properties:
+      hibernate:
+        show_sql: true
+        format_sql: true
+
+  h2:
+    console:
+      enabled: true
+
+
+logging:
+  level:
+    org.hibernate.orm.jdbc.bind: trace
