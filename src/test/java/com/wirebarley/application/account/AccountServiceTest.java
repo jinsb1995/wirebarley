@@ -2,8 +2,11 @@ package com.wirebarley.application.account;
 
 import com.wirebarley.application.account.dto.request.AccountCreateCommand;
 import com.wirebarley.application.account.dto.response.AccountResponse;
+import com.wirebarley.domain.account.Account;
+import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.domain.user.UserRepository;
+import com.wirebarley.infrastructure.account.AccountRepositoryAdapter;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
 import com.wirebarley.infrastructure.exception.CustomException;
 import com.wirebarley.infrastructure.user.jpa.JpaUserRepository;
@@ -22,10 +25,13 @@ import static org.assertj.core.api.Assertions.assertThatThrownBy;
 class AccountServiceTest {
 
     @Autowired
+    private AccountService accountService;
+
+    @Autowired
     private UserRepository userRepository;
 
     @Autowired
-    private AccountService accountService;
+    private AccountRepository accountRepository;
 
     @Autowired
     private JpaUserRepository jpaUserRepository;
@@ -45,13 +51,7 @@ class AccountServiceTest {
         // given
         LocalDateTime registeredAt = LocalDateTime.now();
 
-        User user = User.builder()
-                .username("user1")
-                .email("user1@email.com")
-                .password("password")
-                .createdAt(LocalDateTime.now())
-                .modifiedAt(LocalDateTime.now())
-                .build();
+        User user = createUser();
         User savedUser = userRepository.save(user);
         Long userId = savedUser.getId();
 
@@ -91,5 +91,46 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.createAccount(command, registeredAt))
                 .isInstanceOf(CustomException.class)
                 .hasMessage("유저를 찾을 수 없습니다.");
+    }
+
+    @DisplayName("계좌 소유자만 계좌를 삭제할 수 있다.")
+    @Test
+    public void deleteAccount() {
+        // given
+        User user = createUser();
+        User savedUser = userRepository.save(user);
+        Long userId = savedUser.getId();
+
+        Account account = createAccount(savedUser);
+        Account savedAccount = accountRepository.save(account);
+
+        // when
+        accountService.deleteAccount(savedAccount.getId(), userId);
+
+        // then
+        assertThatThrownBy(() -> accountService.deleteAccount(savedAccount.getId(), userId))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("계좌가 존재하지 않습니다.");
+    }
+
+    private User createUser() {
+        return User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private Account createAccount(User savedUser) {
+        return Account.builder()
+                .accountNumber(1111L)
+                .password(1234)
+                .balance(1000L)
+                .user(savedUser)
+                .registeredAt(LocalDateTime.now())
+                .unregisteredAt(null)
+                .build();
     }
 }

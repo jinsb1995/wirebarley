@@ -34,6 +34,7 @@ public class AccountService {
         return AccountResponse.of(save);
     }
 
+    @Transactional
     public void deleteAccount(Long accountId, Long userId) {
         Account findAccount = accountRepository.findById(accountId);
 

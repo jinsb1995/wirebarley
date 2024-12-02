@@ -4,6 +4,7 @@ import com.wirebarley.config.TestQueryDslConfig;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
+import com.wirebarley.infrastructure.exception.CustomException;
 import com.wirebarley.infrastructure.user.UserRepositoryAdapter;
 import com.wirebarley.infrastructure.user.jpa.JpaUserRepository;
 import org.junit.jupiter.api.AfterEach;
@@ -16,6 +17,7 @@ import org.springframework.context.annotation.Import;
 import java.time.LocalDateTime;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @Import({TestQueryDslConfig.class, AccountRepositoryAdapter.class, UserRepositoryAdapter.class})
 @DataJpaTest
@@ -80,5 +82,58 @@ class AccountRepositoryAdapterTest {
         assertThat(latestAccountNumber).isNull();
     }
 
+    @DisplayName("계좌를 조회할 때 사용자 정보도 함께 조회한다.")
+    @Test
+    public void findByIdWithUser() {
+        // given
+        User user = createUser();
+        User savedUser = userRepositoryAdapter.save(user);
+        Account account = createAccount(savedUser);
+        Account savedAccount = accountRepositoryAdapter.save(account);
+
+        // when
+        Account findAccount = accountRepositoryAdapter.findById(savedAccount.getId());
+
+        // then
+        assertThat(findAccount.getAccountNumber()).isEqualTo(1111L);
+        assertThat(findAccount.getPassword()).isEqualTo(1234);
+        assertThat(findAccount.getBalance()).isEqualTo(1000L);
+        assertThat(findAccount.getUser().getId()).isEqualTo(savedUser.getId());
+        assertThat(findAccount.getUser().getUsername()).isEqualTo("user1");
+        assertThat(findAccount.getUser().getEmail()).isEqualTo("user1@email.com");
+    }
+
+    @DisplayName("id에 해당하는 계좌가 없으면 예외를 반환한다.")
+    @Test
+    public void throwExceptionWhenAccountNotExist() {
+        // given
+
+        // when
+        // then
+        assertThatThrownBy(() -> accountRepositoryAdapter.findById(1L))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("계좌가 존재하지 않습니다.");
+    }
+
+    private User createUser() {
+        return User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private Account createAccount(User savedUser) {
+        return Account.builder()
+                .accountNumber(1111L)
+                .password(1234)
+                .balance(1000L)
+                .user(savedUser)
+                .registeredAt(LocalDateTime.now())
+                .unregisteredAt(null)
+                .build();
+    }
 
 }
