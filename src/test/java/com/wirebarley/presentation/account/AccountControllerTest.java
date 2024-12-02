@@ -1,7 +1,8 @@
 package com.wirebarley.presentation.account;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wirebarley.domain.account.Account;
+import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.domain.user.UserRepository;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
@@ -16,8 +17,10 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import java.time.LocalDateTime;
-
+import static com.wirebarley.fixture.AccountCreateRequestFixture.createRequestFixture;
+import static com.wirebarley.fixture.AccountFixture.createAccountFixture;
+import static com.wirebarley.fixture.UserFixture.createUserFixture;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
@@ -37,6 +40,9 @@ class AccountControllerTest {
     private UserRepository userRepository;
 
     @Autowired
+    private AccountRepository accountRepository;
+
+    @Autowired
     private JpaUserRepository jpaUserRepository;
 
     @Autowired
@@ -52,20 +58,10 @@ class AccountControllerTest {
     @Test
     public void createAccount() throws Exception {
         // given
-        User user = User.builder()
-                .username("user1")
-                .email("user1@email.com")
-                .password("password")
-                .createdAt(LocalDateTime.now())
-                .modifiedAt(LocalDateTime.now())
-                .build();
+        User user = createUserFixture("user1", "user1@email.com");
         User savedUser = userRepository.save(user);
 
-        AccountCreateRequest request = AccountCreateRequest.builder()
-                .password(1234)
-                .balance(1000L)
-                .userId(savedUser.getId())
-                .build();
+        AccountCreateRequest request = createRequestFixture(1234, 1000L, savedUser.getId());
 
         // when
         // then
@@ -88,19 +84,10 @@ class AccountControllerTest {
     @Test
     public void passwordIsRequiredValue() throws Exception {
         // given
-        User user = User.builder()
-                .username("user1")
-                .email("user1@email.com")
-                .password("password")
-                .createdAt(LocalDateTime.now())
-                .modifiedAt(LocalDateTime.now())
-                .build();
+        User user = createUserFixture("user1", "user1@email.com");
         User savedUser = userRepository.save(user);
 
-        AccountCreateRequest request = AccountCreateRequest.builder()
-                .balance(1000L)
-                .userId(savedUser.getId())
-                .build();
+        AccountCreateRequest request = createRequestFixture(null, 1000L, savedUser.getId());
 
         // when
         // then
@@ -121,10 +108,7 @@ class AccountControllerTest {
     @Test
     public void userIdIsRequiredValue() throws Exception {
         // given
-        AccountCreateRequest request = AccountCreateRequest.builder()
-                .password(1234)
-                .balance(1000L)
-                .build();
+        AccountCreateRequest request = createRequestFixture(1234, 1000L, null);
 
         // when
         // then
@@ -132,6 +116,74 @@ class AccountControllerTest {
                         post("/api/v1/account")
                                 .content(om.writeValueAsString(request))
                                 .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("회원 정보는 필수입니다."))
+                .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @DisplayName("기존 계좌를 삭제한다.")
+    @Test
+    public void deleteAccount() throws Exception {
+        // given
+        User user = createUserFixture("user1", "user1@email.com");
+        User savedUser = userRepository.save(user);
+
+        Account account = createAccountFixture(1111L, savedUser);
+        Account savedAccount = accountRepository.save(account);
+
+        // when
+        // then
+        mvc.perform(
+                        delete("/api/v1/account/{id}", savedAccount.getId())
+                                .param("userId", String.valueOf(savedUser.getId()))
+                )
+                .andDo(print())
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.code").value(200))
+                .andExpect(jsonPath("$.status").value("OK"))
+                .andExpect(jsonPath("$.message").value("success"))
+                .andExpect(jsonPath("$.data").isNotEmpty());
+    }
+
+    @DisplayName("본인 소유가 아닌 계좌를 삭제하려고 하면 예외가 발생한다.")
+    @Test
+    public void cannotDeleteOthersAccount() throws Exception {
+        // given
+        String wrongUserId = "2";
+        User user = createUserFixture("user1", "user1@email.com");
+        User savedUser = userRepository.save(user);
+
+        Account account = createAccountFixture(1111L, savedUser);
+        Account savedAccount = accountRepository.save(account);
+
+        // when
+        // then
+        mvc.perform(
+                        delete("/api/v1/account/{id}", savedAccount.getId())
+                                .param("userId", wrongUserId)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.code").value(400))
+                .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
+                .andExpect(jsonPath("$.message").value("계좌 소유자가 아닙니다."))
+                .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @DisplayName("계좌를 삭제할 때 회원정보는 필수이다.")
+    @Test
+    public void userIdIsRequired() throws Exception {
+        // given
+        Long accountId = 1L;
+
+        // when
+        // then
+        mvc.perform(
+                        delete("/api/v1/account/{id}", accountId)
                 )
                 .andDo(print())
                 .andExpect(status().isBadRequest())

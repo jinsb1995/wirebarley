@@ -6,7 +6,6 @@ import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.domain.user.UserRepository;
-import com.wirebarley.infrastructure.account.AccountRepositoryAdapter;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
 import com.wirebarley.infrastructure.exception.CustomException;
 import com.wirebarley.infrastructure.user.jpa.JpaUserRepository;
@@ -18,6 +17,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 
 import java.time.LocalDateTime;
 
+import static com.wirebarley.fixture.AccountCreateCommandFixture.createCommandFixture;
+import static com.wirebarley.fixture.AccountFixture.createAccountFixture;
+import static com.wirebarley.fixture.UserFixture.createUserFixture;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
@@ -51,15 +53,11 @@ class AccountServiceTest {
         // given
         LocalDateTime registeredAt = LocalDateTime.now();
 
-        User user = createUser();
+        User user = createUserFixture("user1", "user1@email.com");
         User savedUser = userRepository.save(user);
         Long userId = savedUser.getId();
 
-        AccountCreateCommand command = AccountCreateCommand.builder()
-                .password(1234)
-                .balance(1000L)
-                .userId(userId)
-                .build();
+        AccountCreateCommand command = createCommandFixture(1234, 1000L, userId);
 
         // when
         AccountResponse account = accountService.createAccount(command, registeredAt);
@@ -80,11 +78,7 @@ class AccountServiceTest {
         // given
         LocalDateTime registeredAt = LocalDateTime.now();
 
-        AccountCreateCommand command = AccountCreateCommand.builder()
-                .password(1234)
-                .balance(1000L)
-                .userId(1L)
-                .build();
+        AccountCreateCommand command = createCommandFixture(1234, 1000L, 1L);
 
         // when
         // then
@@ -97,11 +91,11 @@ class AccountServiceTest {
     @Test
     public void deleteAccount() {
         // given
-        User user = createUser();
+        User user = createUserFixture("user1", "user1@email.com");
         User savedUser = userRepository.save(user);
         Long userId = savedUser.getId();
 
-        Account account = createAccount(savedUser);
+        Account account = createAccountFixture(1111L, savedUser);
         Account savedAccount = accountRepository.save(account);
 
         // when
@@ -111,26 +105,5 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.deleteAccount(savedAccount.getId(), userId))
                 .isInstanceOf(CustomException.class)
                 .hasMessage("계좌가 존재하지 않습니다.");
-    }
-
-    private User createUser() {
-        return User.builder()
-                .username("user1")
-                .email("user1@email.com")
-                .password("password")
-                .createdAt(LocalDateTime.now())
-                .modifiedAt(LocalDateTime.now())
-                .build();
-    }
-
-    private Account createAccount(User savedUser) {
-        return Account.builder()
-                .accountNumber(1111L)
-                .password(1234)
-                .balance(1000L)
-                .user(savedUser)
-                .registeredAt(LocalDateTime.now())
-                .unregisteredAt(null)
-                .build();
     }
 }
