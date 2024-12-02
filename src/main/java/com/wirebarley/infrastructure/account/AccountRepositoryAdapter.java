@@ -28,4 +28,16 @@ public class AccountRepositoryAdapter implements AccountRepository {
         AccountEntity accountEntity = AccountEntity.create(account, userEntity);
         return jpaAccountRepository.save(accountEntity).toDomain();
     }
+
+    @Override
+    public Account findById(Long accountId) {
+        return jpaAccountRepository.findById(accountId)
+                .orElseThrow()
+                .toDomain();
+    }
+
+    @Override
+    public void deleteById(Long accountId) {
+        jpaAccountRepository.deleteById(accountId);
+    }
 }

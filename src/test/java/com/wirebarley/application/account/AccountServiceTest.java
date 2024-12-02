@@ -67,8 +67,8 @@ class AccountServiceTest {
         // then
         assertThat(account.getId()).isNotNull();
         assertThat(account)
-                .extracting("balance", "registeredAt")
-                .contains(1000L, registeredAt);
+                .extracting("balance", "registeredAt", "unregisteredAt")
+                .contains(1000L, registeredAt, null);
         assertThat(account.getUser())
                 .extracting("id", "username", "email")
                 .contains(userId, "user1", "user1@email.com");
@@ -92,5 +92,4 @@ class AccountServiceTest {
                 .isInstanceOf(CustomException.class)
                 .hasMessage("유저를 찾을 수 없습니다.");
     }
-
 }

@@ -1,10 +1,13 @@
 package com.wirebarley.domain.account;
 
 import com.wirebarley.domain.user.User;
+import com.wirebarley.infrastructure.exception.CustomException;
 import lombok.Builder;
 import lombok.Getter;
 
 import java.time.LocalDateTime;
+
+import static com.wirebarley.infrastructure.exception.ExceptionConstant.NOT_OWNER_EXCEPTION;
 
 @Getter
 public class Account {
@@ -30,5 +33,12 @@ public class Account {
         this.unregisteredAt = unregisteredAt;
         this.createdAt = createdAt;
         this.modifiedAt = modifiedAt;
+    }
+
+
+    public void checkOwner(Long userId) {
+        if (!this.user.getId().equals(userId)) {
+            throw new CustomException(NOT_OWNER_EXCEPTION.getMessage());
+        }
     }
 }

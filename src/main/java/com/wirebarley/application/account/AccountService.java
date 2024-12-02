@@ -8,9 +8,11 @@ import com.wirebarley.domain.user.User;
 import com.wirebarley.domain.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
+@Transactional(readOnly = true)
 @RequiredArgsConstructor
 @Service
 public class AccountService {
@@ -20,6 +22,7 @@ public class AccountService {
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
 
+    @Transactional
     public AccountResponse createAccount(AccountCreateCommand command, LocalDateTime registeredAt) {
         User findUser = userRepository.findById(command.userId());
 
@@ -31,6 +34,14 @@ public class AccountService {
         return AccountResponse.of(save);
     }
 
+    public void deleteAccount(Long accountId, Long userId) {
+        Account findAccount = accountRepository.findById(accountId);
+
+        findAccount.checkOwner(userId);
+
+        accountRepository.deleteById(accountId);
+    }
+
     private Long createNewAccountNumber() {
         Long latestAccountNumber = accountRepository.findLatestAccountNumber();
         if (latestAccountNumber == null) {
@@ -39,5 +50,4 @@ public class AccountService {
 
         return latestAccountNumber + 1;
     }
-
 }
