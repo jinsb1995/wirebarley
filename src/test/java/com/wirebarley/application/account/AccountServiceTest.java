@@ -72,6 +72,29 @@ class AccountServiceTest {
                 .contains(userId, "user1", "user1@email.com");
     }
 
+    @DisplayName("새로운 계좌를 생성하는데, Account 테이블의 마지막 계좌번호가 1111일 때 새로 생성하는 계좌번호는 1112이다.")
+    @Test
+    public void createAccount2() {
+        // given
+        LocalDateTime registeredAt = LocalDateTime.now();
+
+        User user = createUserFixture("user1", "user1@email.com");
+        User savedUser = userRepository.save(user);
+        Long userId = savedUser.getId();
+
+        Account accountFixture = createAccountFixture(1111L, savedUser);
+        Account savedAccount = accountRepository.save(accountFixture);
+
+        AccountCreateCommand command = createCommandFixture(1234, 1000L, userId);
+
+        // when
+        AccountResponse account = accountService.createAccount(command, registeredAt);
+
+        // then
+        assertThat(savedAccount.getAccountNumber()).isEqualTo(1111L);
+        assertThat(account.getAccountNumber()).isEqualTo(1112L);
+    }
+
     @DisplayName("유저 정보가 없으면 계좌 저장 시 예외가 발샏한다.")
     @Test
     public void createAccountWithoutUser() {

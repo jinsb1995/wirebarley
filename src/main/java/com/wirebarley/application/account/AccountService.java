@@ -17,16 +17,15 @@ import java.time.LocalDateTime;
 @Service
 public class AccountService {
 
-    private static final long INITIAL_ACCOUNT_NUMBER = 1111L;
-
     private final AccountRepository accountRepository;
     private final UserRepository userRepository;
+    private final AccountNumberCreator accountNumberCreator;
 
     @Transactional
     public AccountResponse createAccount(AccountCreateCommand command, LocalDateTime registeredAt) {
         User findUser = userRepository.findById(command.userId());
 
-        Long newAccountNumber = createNewAccountNumber();
+        Long newAccountNumber = accountNumberCreator.create();
 
         Account account = command.toDomain(findUser, newAccountNumber, registeredAt);
 
@@ -41,14 +40,5 @@ public class AccountService {
         findAccount.checkOwner(userId);
 
         accountRepository.deleteById(accountId);
-    }
-
-    private Long createNewAccountNumber() {
-        Long latestAccountNumber = accountRepository.findLatestAccountNumber();
-        if (latestAccountNumber == null) {
-            return INITIAL_ACCOUNT_NUMBER;
-        }
-
-        return latestAccountNumber + 1;
     }
 }
