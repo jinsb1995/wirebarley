@@ -76,6 +76,8 @@ public class AccountService {
 
         withdrawAccount.withdraw(command.amount(), transferCharge);
         depositAccount.deposit(command.amount());
+        accountRepository.save(withdrawAccount);
+        accountRepository.save(depositAccount);
 
         Transaction transaction = Transaction.builder()
                 .withdrawAccountNumber(withdrawAccount.getAccountNumber())

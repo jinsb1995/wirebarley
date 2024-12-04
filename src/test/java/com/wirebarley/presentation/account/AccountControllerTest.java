@@ -1,6 +1,8 @@
 package com.wirebarley.presentation.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.wirebarley.application.account.dto.request.AccountCreateCommand;
+import com.wirebarley.application.account.dto.request.TransferCommand;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.user.User;
@@ -8,6 +10,7 @@ import com.wirebarley.domain.user.UserRepository;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
 import com.wirebarley.infrastructure.user.jpa.JpaUserRepository;
 import com.wirebarley.presentation.account.dto.request.AccountCreateRequest;
+import com.wirebarley.presentation.account.dto.request.TransferRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -19,6 +22,7 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
+import static com.wirebarley.domain.transaction.TransactionType.TRANSFER;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -245,5 +249,220 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.status").value("BAD_REQUEST"))
                 .andExpect(jsonPath("$.message").value("회원 정보는 필수입니다."))
                 .andExpect(jsonPath("$.data").isEmpty());
+    }
+
+    @DisplayName("계좌이체에 성공한다.")
+    @Test
+    public void transfer() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+        long depositAccountNumber = 2222L;
+
+        User withdrawUser = createUser("계좌이체하는사람", "user1@email.com", "password1");
+        User savedWithdrawUser = userRepository.save(withdrawUser);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
+        accountRepository.save(withdrawAccount);
+
+        User depositUser = createUser("입금받는사람", "user2@email.com", "password2");
+        User savedDepositUser = userRepository.save(depositUser);
+        Account depositAccount = getAccount(depositAccountNumber, 5678, 1000L, savedDepositUser);
+        accountRepository.save(depositAccount);
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .withdrawNumber(withdrawAccountNumber)
+                .depositNumber(depositAccountNumber)
+                .userId(savedWithdrawUser.getId())
+                .amount(100L)
+                .accountPassword(withdrawAccount.getPassword())
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.code").value(201),
+                        jsonPath("$.status").value("CREATED"),
+                        jsonPath("$.message").value("success"),
+                        jsonPath("$.data.id").value(1),
+                        jsonPath("$.data.withdrawAccountNumber").value(1111),
+                        jsonPath("$.data.depositAccountNumber").value(2222),
+                        jsonPath("$.data.amount").value(100),
+                        jsonPath("$.data.withdrawAccountBalance").value(899),
+                        jsonPath("$.data.type").value("TRANSFER"),
+                        jsonPath("$.data.sender").value("계좌이체하는사람"),
+                        jsonPath("$.data.receiver").value("입금받는사람")
+                );
+    }
+
+    @DisplayName("계좌이체시 출금 계좌번호는 필수이다.")
+    @Test
+    public void withdrawNumberIsRequired() throws Exception {
+        // given
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .depositNumber(1111L)
+                .userId(1L)
+                .amount(100L)
+                .accountPassword(1234)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("출금 계좌번호는 필수입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("계좌이체시 입금 계좌번호는 필수이다.")
+    @Test
+    public void depositNumberIsRequired() throws Exception {
+        // given
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .withdrawNumber(1111L)
+                .userId(1L)
+                .amount(100L)
+                .accountPassword(1234)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("입금 계좌번호는 필수입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("계좌이체시 계좌 소유주 정보는 필수이다.")
+    @Test
+    public void userIdIsRequiredWhenTransfer() throws Exception {
+        // given
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .withdrawNumber(1111L)
+                .depositNumber(2222L)
+                .amount(100L)
+                .accountPassword(1234)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("계좌 소유주 정보는 필수입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("계좌이체시 이체 금액은 필수이다.")
+    @Test
+    public void amountIsRequired() throws Exception {
+        // given
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .withdrawNumber(1111L)
+                .depositNumber(2222L)
+                .userId(1L)
+                .accountPassword(1234)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("이체 금액은 필수입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("계좌이체시 출금액은 필수이다.")
+    @Test
+    public void accountPasswordIsRequired() throws Exception {
+        // given
+
+        TransferRequest transferRequest = TransferRequest.builder()
+                .withdrawNumber(1111L)
+                .depositNumber(2222L)
+                .userId(1L)
+                .amount(100L)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/transfer")
+                                .content(om.writeValueAsString(transferRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("출금계좌 비밀번호는 필수입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    private User createUser(String user1, String mail, String password) {
+        return User.builder()
+                .username(user1)
+                .email(mail)
+                .password(password)
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
+    }
+
+    private Account getAccount(long accountNumber, int password, long balance, User user) {
+        return Account.builder()
+                .accountNumber(accountNumber)
+                .password(password)
+                .balance(balance)
+                .user(user)
+                .registeredAt(LocalDateTime.now())
+                .unregisteredAt(null)
+                .build();
     }
 }

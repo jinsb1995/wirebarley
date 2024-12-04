@@ -2,9 +2,11 @@ package com.wirebarley.presentation.account;
 
 import com.wirebarley.application.account.AccountService;
 import com.wirebarley.application.account.dto.response.AccountResponse;
+import com.wirebarley.application.account.dto.response.TransactionResponse;
 import com.wirebarley.infrastructure.common.ApiResponse;
 import com.wirebarley.presentation.account.dto.request.AccountCreateRequest;
 import com.wirebarley.presentation.account.dto.request.AccountDeleteRequest;
+import com.wirebarley.presentation.account.dto.request.TransferRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -31,5 +33,12 @@ public class AccountController {
         accountService.deleteAccount(id, request.userId());
 
         return ApiResponse.ok();
+    }
+
+    @PostMapping("/v1/account/transfer")
+    public ResponseEntity<ApiResponse<TransactionResponse>> transfer(@Valid @RequestBody TransferRequest request) {
+        TransactionResponse result = accountService.transfer(request.toCommand());
+
+        return ApiResponse.created(result);
     }
 }
