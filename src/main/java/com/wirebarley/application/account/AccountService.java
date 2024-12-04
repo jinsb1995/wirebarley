@@ -1,9 +1,13 @@
 package com.wirebarley.application.account;
 
 import com.wirebarley.application.account.dto.request.AccountCreateCommand;
+import com.wirebarley.application.account.dto.request.DepositCommand;
 import com.wirebarley.application.account.dto.request.TransferCommand;
+import com.wirebarley.application.account.dto.request.WithdrawCommand;
 import com.wirebarley.application.account.dto.response.AccountResponse;
+import com.wirebarley.application.account.dto.response.DepositResponse;
 import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.account.dto.response.WithdrawResponse;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.transaction.Transaction;
@@ -18,8 +22,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 
-import static com.wirebarley.infrastructure.exception.ExceptionConstant.SAME_ACCOUNT_EXCEPTION;
-import static com.wirebarley.infrastructure.exception.ExceptionConstant.ZERO_AMOUNT_EXCEPTION;
+import static com.wirebarley.infrastructure.exception.ExceptionConstant.*;
 
 @Transactional(readOnly = true)
 @RequiredArgsConstructor
@@ -51,6 +54,56 @@ public class AccountService {
         findAccount.checkOwner(userId);
 
         accountRepository.deleteById(accountId);
+    }
+
+    @Transactional
+    public DepositResponse deposit(DepositCommand command) {
+        if (command.amount() <= 0) {
+            throw new CustomException(ZERO_AMOUNT_DEPOSIT_EXCEPTION.getMessage());
+        }
+
+        Account findAccount = accountRepository.findByAccountNumber(command.accountNumber());
+
+        findAccount.deposit(command.amount());
+
+        Transaction transaction = Transaction.builder()
+                .depositAccount(findAccount)
+                .depositAccountBalance(findAccount.getBalance())
+                .amount(command.amount())
+                .type(TransactionType.DEPOSIT)
+                .sender(command.sender())
+                .receiver(findAccount.getUser().getUsername())
+                .build();
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        return DepositResponse.of(savedTransaction);
+    }
+
+    @Transactional
+    public WithdrawResponse withdraw(WithdrawCommand command) {
+        if (command.amount() <= 0) {
+            throw new CustomException(ZERO_AMOUNT_WITHDRAW_EXCEPTION.getMessage());
+        }
+
+        Account findAccount = accountRepository.findByAccountNumber(command.accountNumber());
+
+        Long transferCharge = findAccount.getTransferCharge(command.amount());
+        findAccount.checkOwner(command.userId());
+        findAccount.checkPassword(command.password());
+        findAccount.checkEnoughBalanceByCharge(command.amount(), transferCharge);
+        findAccount.withdraw(command.amount(), 0L);
+
+        Transaction transaction = Transaction.builder()
+                .withdrawAccount(findAccount)
+                .withdrawAccountBalance(findAccount.getBalance())
+                .amount(command.amount())
+                .type(TransactionType.WITHDRAW)
+                .sender(findAccount.getUser().getUsername())
+                .receiver(command.receiver())
+                .build();
+
+        Transaction savedTransaction = transactionRepository.save(transaction);
+        return WithdrawResponse.of(savedTransaction);
     }
 
     @Transactional

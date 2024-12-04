@@ -3,6 +3,7 @@ package com.wirebarley.infrastructure.transaction.jpa;
 import com.querydsl.core.types.dsl.BooleanExpression;
 import com.querydsl.jpa.impl.JPAQuery;
 import com.querydsl.jpa.impl.JPAQueryFactory;
+import com.wirebarley.domain.transaction.TransactionType;
 import com.wirebarley.domain.transaction.dto.TransactionRetrieveQuery;
 import com.wirebarley.infrastructure.account.entity.QAccountEntity;
 import com.wirebarley.infrastructure.transaction.entity.TransactionEntity;
@@ -11,8 +12,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
-import static com.wirebarley.domain.transaction.TransactionType.DEPOSIT;
-import static com.wirebarley.domain.transaction.TransactionType.WITHDRAW;
+import static com.wirebarley.domain.transaction.TransactionType.*;
 import static com.wirebarley.infrastructure.transaction.entity.QTransactionEntity.transactionEntity;
 
 @RequiredArgsConstructor
@@ -20,7 +20,6 @@ import static com.wirebarley.infrastructure.transaction.entity.QTransactionEntit
 public class TransactionRepositoryDSL {
 
     private final JPAQueryFactory query;
-
 
     public List<TransactionEntity> findTransactions(TransactionRetrieveQuery dto) {
         QAccountEntity withdrawAccount = new QAccountEntity("withdrawAccount");
@@ -34,17 +33,25 @@ public class TransactionRepositoryDSL {
             from
                     .innerJoin(transactionEntity.withdrawAccount, withdrawAccount).fetchJoin()
                     .where(
-                            transactionEntity.withdrawAccount.id.eq(dto.accountId())
-                                    .and(transactionEntity.type.eq(dto.type()))
+                            transactionEntity.withdrawAccount.id.eq(dto.accountId()),
+                            transactionTypeEq(dto.type())
                     );
         } else if (dto.type() == DEPOSIT) {
             from
                     .innerJoin(transactionEntity.depositAccount, depositAccount).fetchJoin()
                     .where(
-                            transactionEntity.depositAccount.id.eq(dto.accountId())
-                                    .and(transactionEntity.type.eq(dto.type()))
+                            transactionEntity.depositAccount.id.eq(dto.accountId()),
+                            transactionTypeEq(dto.type())
                     );
-        } else {
+        } else if (dto.type() == TRANSFER) {
+            from
+                    .leftJoin(transactionEntity.withdrawAccount, withdrawAccount).fetchJoin()
+                    .leftJoin(transactionEntity.depositAccount, depositAccount).fetchJoin()
+                    .where(
+                            withdrawAccountIdEq(dto.accountId()),
+                            transactionTypeEq(dto.type())
+                    );
+        } else  {
             from
                     .leftJoin(transactionEntity.withdrawAccount, withdrawAccount).fetchJoin()
                     .leftJoin(transactionEntity.depositAccount, depositAccount).fetchJoin()
@@ -67,5 +74,9 @@ public class TransactionRepositoryDSL {
 
     private BooleanExpression depositAccountIdEq(Long accountId) {
         return transactionEntity.depositAccount.id.eq(accountId);
+    }
+
+    private static BooleanExpression transactionTypeEq(TransactionType type) {
+        return transactionEntity.type.eq(type);
     }
 }

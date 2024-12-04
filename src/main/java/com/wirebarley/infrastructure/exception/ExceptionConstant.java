@@ -13,6 +13,8 @@ public enum ExceptionConstant {
     NOT_ENOUGH_BALANCE_EXCEPTION("NOT_ENOUGH_BALANCE", "계좌 잔액이 부족합니다."),
     SAME_ACCOUNT_EXCEPTION("SAME_ACCOUNT", "출금계좌와 입금계좌는 동일할 수 없습니다."),
     ZERO_AMOUNT_EXCEPTION("ZERO_AMOUNT", "0원 이하의 금액을 이체할 수 없습니다."),
+    ZERO_AMOUNT_DEPOSIT_EXCEPTION("ZERO_AMOUNT_DEPOSIT", "0원 이하의 금액을 입금할 수 없습니다."),
+    ZERO_AMOUNT_WITHDRAW_EXCEPTION("ZERO_AMOUNT_WITHDRAW", "0원 이하의 금액을 출금할 수 없습니다."),
     
     DAILY_LIMIT_EXCEPTION("DAILY_LIMIT", "일 이체 한도를 초과했습니다."),
     WEEKLY_LIMIT_EXCEPTION("WEEKLY_LIMIT", "주 이체 한도를 초과했습니다."),

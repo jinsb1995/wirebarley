@@ -1,0 +1,70 @@
+
+### 계좌 생성 2
+POST http://localhost:8080/api/v1/account
+Content-Type: application/json
+
+{
+  "password": 5678,
+  "balance": 3000,
+  "userId": 2
+}
+
+### 입금
+POST http://localhost:8080/api/v1/account/deposit
+Content-Type: application/json
+
+{
+  "accountNumber": 1112,
+  "amount": 555,
+  "type": "DEPOSIT",
+  "sender": "ATM"
+}
+
+<> 2024-12-04T225150.201.json
+<> 2024-12-04T224918.201.json
+
+### 입금
+POST http://localhost:8080/api/v1/account/deposit
+Content-Type: application/json
+
+{
+  "accountNumber": 1112,
+  "amount": 667,
+  "type": "DEPOSIT",
+  "sender": "ATM"
+}
+
+
+<> 2024-12-04T225151.201.json
+<> 2024-12-04T224920.201.json
+
+### 이체
+POST http://localhost:8080/api/v1/account/transfer
+Content-Type: application/json
+
+{
+  "withdrawNumber": 1112,
+  "depositNumber": 1111,
+  "userId": 2,
+  "amount": 2300,
+  "accountPassword": 5678
+}
+
+<> 2024-12-04T225153.201.json
+<> 2024-12-04T224921.201.json
+
+
+
+###
+GET http://localhost:8080/api/v1/transactions
+    ?offset=0
+    &count=10
+    &accountId=2
+    &userId=2
+    &type=ALL
+
+
+<> 2024-12-04T225155.200.json
+<> 2024-12-04T225004.500.json
+<> 2024-12-04T224924.500.json
+

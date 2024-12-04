@@ -8,4 +8,5 @@ public enum TransactionType {
     DEPOSIT,  // 입금
     TRANSFER, // 이체
     ALL       // 입출금내역
+    ;
 }

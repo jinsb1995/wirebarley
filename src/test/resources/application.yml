@@ -4,14 +4,10 @@ spring:
     default: test
 
   datasource:
-#    url: jdbc:h2:mem:~/wirebarley
-#    driver-class-name: org.h2.Driver
-#    username: sa
-#    password:
-    url: jdbc:mysql://localhost:3306/wirebarley
-    driver-class-name: com.mysql.cj.jdbc.Driver
-    username: root
-    password: 1234
+    url: jdbc:h2:mem:~/wirebarley;MODE=MySQL
+    driver-class-name: org.h2.Driver
+    username: sa
+    password:
 
   jpa:
     hibernate:
@@ -21,6 +17,7 @@ spring:
       hibernate:
         show_sql: true
         format_sql: true
+    defer-datasource-initialization: true
 
   h2:
     console:

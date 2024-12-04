@@ -1,9 +1,13 @@
 package com.wirebarley.application.account;
 
 import com.wirebarley.application.account.dto.request.AccountCreateCommand;
+import com.wirebarley.application.account.dto.request.DepositCommand;
 import com.wirebarley.application.account.dto.request.TransferCommand;
+import com.wirebarley.application.account.dto.request.WithdrawCommand;
 import com.wirebarley.application.account.dto.response.AccountResponse;
+import com.wirebarley.application.account.dto.response.DepositResponse;
 import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.account.dto.response.WithdrawResponse;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.transaction.Transaction;
@@ -145,6 +149,177 @@ class AccountServiceTest {
         assertThatThrownBy(() -> accountService.deleteAccount(savedAccount.getId(), userId))
                 .isInstanceOf(CustomException.class)
                 .hasMessage("계좌가 존재하지 않습니다.");
+    }
+
+    @DisplayName("입금을 한다.")
+    @Test
+    public void deposit() {
+        // given
+        long depositAccountNumber = 1111L;
+        long amount = 500;
+
+        User user = createUser("입금받는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account depositAccount = getAccount(depositAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(depositAccount);
+
+        DepositCommand depositCommand = DepositCommand.builder()
+                .accountNumber(depositAccountNumber)
+                .amount(amount)
+                .sender("ATM")
+                .build();
+
+        // when
+        DepositResponse depositResponse = accountService.deposit(depositCommand);
+
+        // then
+        assertAll(
+                () -> assertThat(depositResponse.getDepositAccountNumber()).isEqualTo(depositAccountNumber),
+                () -> assertThat(depositResponse.getAmount()).isEqualTo(amount),
+                () -> assertThat(depositResponse.getDepositAccountBalance()).isEqualTo(1500),
+                () -> assertThat(depositResponse.getType()).isEqualTo(TransactionType.DEPOSIT),
+                () -> assertThat(depositResponse.getSender()).isEqualTo("ATM"),
+                () -> assertThat(depositResponse.getReceiver()).isEqualTo("입금받는사람")
+        );
+    }
+
+    @DisplayName("입금 하려는 금액이 0원이면 예외가 발생한다.")
+    @Test
+    public void depositWithZeroAmount() {
+        // given
+        long depositAccountNumber = 1111L;
+
+        User user = createUser("입금받는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account depositAccount = getAccount(depositAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(depositAccount);
+
+        DepositCommand depositCommand = DepositCommand.builder()
+                .accountNumber(depositAccountNumber)
+                .amount(0L)
+                .sender("ATM")
+                .build();
+
+        // when
+        // then
+        assertThatThrownBy(() -> accountService.deposit(depositCommand))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("0원 이하의 금액을 입금할 수 없습니다.");
+    }
+
+    @DisplayName("출금을 한다.")
+    @Test
+    public void withdraw() {
+        // given
+        long withdrawAccountNumber = 1111L;
+        long amount = 500;
+
+        User user = createUser("출금하는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(withdrawAccount);
+
+        WithdrawCommand withdrawCommand = WithdrawCommand.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(amount)
+                .userId(savedUser.getId())
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        WithdrawResponse withdrawResponse = accountService.withdraw(withdrawCommand);
+
+        // then
+        assertAll(
+                () -> assertThat(withdrawResponse.getWithdrawAccountNumber()).isEqualTo(withdrawAccountNumber),
+                () -> assertThat(withdrawResponse.getAmount()).isEqualTo(amount),
+                () -> assertThat(withdrawResponse.getWithdrawAccountBalance()).isEqualTo(500),
+                () -> assertThat(withdrawResponse.getType()).isEqualTo(TransactionType.WITHDRAW),
+                () -> assertThat(withdrawResponse.getSender()).isEqualTo("출금하는사람"),
+                () -> assertThat(withdrawResponse.getReceiver()).isEqualTo("ATM")
+        );
+    }
+
+    @DisplayName("출금 하려는 금액이 0원이면 예외가 발생한다.")
+    @Test
+    public void withdrawWithZeroAmount() {
+        // given
+        long withdrawAccountNumber = 1111L;
+
+        User user = createUser("출금하는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(withdrawAccount);
+
+        WithdrawCommand withdrawCommand = WithdrawCommand.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(0L)
+                .userId(savedUser.getId())
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        assertThatThrownBy(() -> accountService.withdraw(withdrawCommand))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("0원 이하의 금액을 출금할 수 없습니다.");
+    }
+
+    @DisplayName("출금계좌의 비밀번호가 틀리면 계좌이체를 할 수 없다.2")
+    @Test
+    public void withdrawCheckPassword() {
+        // given
+        int wrongPassword = 9012;
+
+        long withdrawAccountNumber = 1111L;
+
+        User user = createUser("출금하는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(withdrawAccount);
+
+        WithdrawCommand withdrawCommand = WithdrawCommand.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(500L)
+                .userId(savedUser.getId())
+                .password(wrongPassword)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        assertThatThrownBy(() -> accountService.withdraw(withdrawCommand))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("계좌 비밀번호 검증에 실패했습니다.");
+    }
+
+    @DisplayName("계좌이체시 출금계좌 잔액이 이체할 금액보다 적으면 예외가 발생한다.")
+    @Test
+    public void withdrawCheckEnoughBalance() {
+        // given
+        long withdrawAccountNumber = 1111L;
+        long amount = 1000L;
+
+        User user = createUser("출금하는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(withdrawAccount);
+
+        WithdrawCommand withdrawCommand = WithdrawCommand.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(amount)
+                .userId(savedUser.getId())
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        assertThatThrownBy(() -> accountService.withdraw(withdrawCommand))
+                .isInstanceOf(CustomException.class)
+                .hasMessage("계좌 잔액이 부족합니다.");
     }
 
     @DisplayName("계좌이체를 한다.")
@@ -526,9 +701,9 @@ class AccountServiceTest {
         assertThat(failCount.get()).isEqualTo(3);
     }
 
-    private User createUser(String user1, String mail, String password) {
+    private User createUser(String username, String mail, String password) {
         return User.builder()
-                .username(user1)
+                .username(username)
                 .email(mail)
                 .password(password)
                 .createdAt(LocalDateTime.now())

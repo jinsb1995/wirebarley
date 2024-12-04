@@ -8,13 +8,11 @@ import lombok.Getter;
 import java.time.LocalDateTime;
 
 @Getter
-public class TransactionResponse {
+public class DepositResponse {
 
     private final Long id;
-    private final Long withdrawAccountNumber;
     private final Long depositAccountNumber;
     private final Long amount;
-    private final Long withdrawAccountBalance;
     private final Long depositAccountBalance;
     private final TransactionType type;
     private final String sender;
@@ -23,12 +21,10 @@ public class TransactionResponse {
     private final LocalDateTime modifiedAt;
 
     @Builder
-    public TransactionResponse(Long id, Long withdrawAccountNumber, Long depositAccountNumber, Long amount, Long withdrawAccountBalance, Long depositAccountBalance, TransactionType type, String sender, String receiver, LocalDateTime createdAt, LocalDateTime modifiedAt) {
+    private DepositResponse(Long id, Long depositAccountNumber, Long amount, Long depositAccountBalance, TransactionType type, String sender, String receiver, LocalDateTime createdAt, LocalDateTime modifiedAt) {
         this.id = id;
-        this.withdrawAccountNumber = withdrawAccountNumber;
         this.depositAccountNumber = depositAccountNumber;
         this.amount = amount;
-        this.withdrawAccountBalance = withdrawAccountBalance;
         this.depositAccountBalance = depositAccountBalance;
         this.type = type;
         this.sender = sender;
@@ -37,15 +33,11 @@ public class TransactionResponse {
         this.modifiedAt = modifiedAt;
     }
 
-    public static TransactionResponse of(Transaction transaction) {
-        Long withdrawAccountNumber = transaction.getWithdrawAccount() != null ? transaction.getWithdrawAccount().getAccountNumber() : null;
-        Long depositAccountNumber = transaction.getDepositAccount() != null ? transaction.getDepositAccount().getAccountNumber() : null;
-        return TransactionResponse.builder()
+    public static DepositResponse of(Transaction transaction) {
+        return DepositResponse.builder()
                 .id(transaction.getId())
-                .withdrawAccountNumber(withdrawAccountNumber)
-                .depositAccountNumber(depositAccountNumber)
+                .depositAccountNumber(transaction.getDepositAccount().getAccountNumber())
                 .amount(transaction.getAmount())
-                .withdrawAccountBalance(transaction.getWithdrawAccountBalance())
                 .depositAccountBalance(transaction.getDepositAccountBalance())
                 .type(transaction.getType())
                 .sender(transaction.getSender())
