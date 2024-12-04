@@ -1,5 +1,6 @@
 package com.wirebarley.application.account;
 
+import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.transaction.Transaction;
 import com.wirebarley.domain.transaction.TransactionType;
 import com.wirebarley.infrastructure.exception.CustomException;
@@ -42,9 +43,12 @@ class TransferLimitCheckerTest {
         long amount = 1L;
         LocalDateTime now = LocalDateTime.now();
 
-        Transaction transaction1 = makeTransaction(withdrawAccountNumber, 2222L, 50_000L, now);
-        Transaction transaction2 = makeTransaction(withdrawAccountNumber, 3333L, 50_000L, now);
-        Transaction transaction3 = makeTransaction(withdrawAccountNumber, 3333L, amount, now);
+        Account withdrawAccount = Account.builder().accountNumber(withdrawAccountNumber).build();
+        Account depositAccount = Account.builder().accountNumber(2222L).build();
+
+        Transaction transaction1 = makeTransaction(withdrawAccount, depositAccount, 50_000L, now);
+        Transaction transaction2 = makeTransaction(withdrawAccount, depositAccount, 50_000L, now);
+        Transaction transaction3 = makeTransaction(withdrawAccount, depositAccount, amount, now);
         transactionRepositoryAdapter.save(transaction1);
         transactionRepositoryAdapter.save(transaction2);
         transactionRepositoryAdapter.save(transaction3);
@@ -64,11 +68,14 @@ class TransferLimitCheckerTest {
         long amount = 1L;
         LocalDateTime weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY).atStartOfDay();
 
+        Account withdrawAccount = Account.builder().accountNumber(withdrawAccountNumber).build();
+        Account depositAccount = Account.builder().accountNumber(2222L).build();
+
         for (int i = 1; i <= 5; i++) {
-            Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, 100_000L, weekStartDate.plusDays(i));
+            Transaction transaction = makeTransaction(withdrawAccount, depositAccount, 100_000L, weekStartDate.plusDays(i));
             transactionRepositoryAdapter.save(transaction);
         }
-        Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, amount, weekStartDate.plusDays(6));
+        Transaction transaction = makeTransaction(withdrawAccount, depositAccount, amount, weekStartDate.plusDays(6));
         transactionRepositoryAdapter.save(transaction);
 
         // when
@@ -86,11 +93,14 @@ class TransferLimitCheckerTest {
         long amount = 1L;
         LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
 
+        Account withdrawAccount = Account.builder().accountNumber(withdrawAccountNumber).build();
+        Account depositAccount = Account.builder().accountNumber(2222L).build();
+
         for (int i = 1; i <= 20; i++) {
-            Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, 100_000L, monthStart.plusDays(i));
+            Transaction transaction = makeTransaction(withdrawAccount, depositAccount, 100_000L, monthStart.plusDays(i));
             transactionRepositoryAdapter.save(transaction);
         }
-        Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, amount, monthStart.plusDays(21));
+        Transaction transaction = makeTransaction(withdrawAccount, depositAccount, amount, monthStart.plusDays(21));
         transactionRepositoryAdapter.save(transaction);
 
         // when
@@ -100,10 +110,10 @@ class TransferLimitCheckerTest {
                 .hasMessage("월 이체 한도를 초과했습니다.");
     }
 
-    private Transaction makeTransaction(long withdrawAccountNumber, long depositAccountNumber, long amount, LocalDateTime transferDate) {
+    private Transaction makeTransaction(Account withdrawAccount, Account depositAccount, long amount, LocalDateTime transferDate) {
         return Transaction.builder()
-                .withdrawAccountNumber(withdrawAccountNumber)
-                .depositAccountNumber(depositAccountNumber)
+                .withdrawAccount(withdrawAccount)
+                .depositAccount(depositAccount)
                 .withdrawAccountBalance(100000L)
                 .amount(amount)
                 .type(TransactionType.TRANSFER)

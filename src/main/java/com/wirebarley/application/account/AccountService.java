@@ -80,8 +80,8 @@ public class AccountService {
         accountRepository.save(depositAccount);
 
         Transaction transaction = Transaction.builder()
-                .withdrawAccountNumber(withdrawAccount.getAccountNumber())
-                .depositAccountNumber(depositAccount.getAccountNumber())
+                .withdrawAccount(withdrawAccount)
+                .depositAccount(depositAccount)
                 .withdrawAccountBalance(withdrawAccount.getBalance())
                 .amount(command.amount())
                 .type(TransactionType.TRANSFER)

@@ -40,8 +40,8 @@ public class TransactionResponse {
     public static TransactionResponse of(Transaction transaction) {
         return TransactionResponse.builder()
                 .id(transaction.getId())
-                .withdrawAccountNumber(transaction.getWithdrawAccountNumber())
-                .depositAccountNumber(transaction.getDepositAccountNumber())
+                .withdrawAccountNumber(transaction.getWithdrawAccount().getAccountNumber())
+                .depositAccountNumber(transaction.getDepositAccount().getAccountNumber())
                 .amount(transaction.getAmount())
                 .withdrawAccountBalance(transaction.getWithdrawAccountBalance())
                 .type(transaction.getType())

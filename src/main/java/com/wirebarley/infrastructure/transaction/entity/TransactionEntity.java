@@ -1,7 +1,9 @@
 package com.wirebarley.infrastructure.transaction.entity;
 
+import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.transaction.Transaction;
 import com.wirebarley.domain.transaction.TransactionType;
+import com.wirebarley.infrastructure.account.entity.AccountEntity;
 import com.wirebarley.infrastructure.common.entity.BaseEntity;
 import jakarta.persistence.*;
 import lombok.AccessLevel;
@@ -19,13 +21,17 @@ public class TransactionEntity extends BaseEntity {
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
-    private Long withdrawAccountNumber;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private AccountEntity withdrawAccount;
 
-    private Long depositAccountNumber;
+    @ManyToOne(fetch = FetchType.LAZY)
+    private AccountEntity depositAccount;
 
     private Long amount;
 
     private Long withdrawAccountBalance;
+
+    private Long depositAccountBalance;
 
     @Enumerated(EnumType.STRING)
     private TransactionType type;
@@ -35,12 +41,13 @@ public class TransactionEntity extends BaseEntity {
     private String receiver;
 
     @Builder
-    private TransactionEntity(Long id, Long withdrawAccountNumber, Long depositAccountNumber, Long amount, Long withdrawAccountBalance, TransactionType type, String sender, String receiver) {
+    private TransactionEntity(Long id, AccountEntity withdrawAccount, AccountEntity depositAccount, Long amount, Long withdrawAccountBalance, Long depositAccountBalance, TransactionType type, String sender, String receiver) {
         this.id = id;
-        this.withdrawAccountNumber = withdrawAccountNumber;
-        this.depositAccountNumber = depositAccountNumber;
+        this.withdrawAccount = withdrawAccount;
+        this.depositAccount = depositAccount;
         this.amount = amount;
         this.withdrawAccountBalance = withdrawAccountBalance;
+        this.depositAccountBalance = depositAccountBalance;
         this.type = type;
         this.sender = sender;
         this.receiver = receiver;
@@ -48,11 +55,14 @@ public class TransactionEntity extends BaseEntity {
 
     public static TransactionEntity create(Transaction transaction) {
 
+        AccountEntity withdrawAccount = transaction.getWithdrawAccount() != null ? AccountEntity.create(transaction.getWithdrawAccount()) : null;
+        AccountEntity depositAccount = transaction.getDepositAccount() != null ? AccountEntity.create(transaction.getDepositAccount()) : null;
         return TransactionEntity.builder()
-                .withdrawAccountNumber(transaction.getWithdrawAccountNumber())
-                .depositAccountNumber(transaction.getDepositAccountNumber())
+                .withdrawAccount(withdrawAccount)
+                .depositAccount(depositAccount)
                 .amount(transaction.getAmount())
                 .withdrawAccountBalance(transaction.getWithdrawAccountBalance())
+                .depositAccountBalance(transaction.getDepositAccountBalance())
                 .type(transaction.getType())
                 .sender(transaction.getSender())
                 .receiver(transaction.getReceiver())
@@ -60,12 +70,15 @@ public class TransactionEntity extends BaseEntity {
     }
 
     public Transaction toDomain() {
+        Account withdrawAccount = this.withdrawAccount != null ? this.withdrawAccount.toDomain() : null;
+        Account depositAccount = this.depositAccount != null ? this.depositAccount.toDomain() : null;
         return Transaction.builder()
                 .id(this.id)
-                .withdrawAccountNumber(this.withdrawAccountNumber)
-                .depositAccountNumber(this.depositAccountNumber)
+                .withdrawAccount(withdrawAccount)
+                .depositAccount(depositAccount)
                 .amount(this.amount)
                 .withdrawAccountBalance(this.withdrawAccountBalance)
+                .depositAccountBalance(this.depositAccountBalance)
                 .type(this.type)
                 .sender(this.sender)
                 .receiver(this.receiver)

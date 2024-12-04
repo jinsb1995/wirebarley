@@ -24,8 +24,6 @@ import org.springframework.boot.test.context.SpringBootTest;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -372,15 +370,15 @@ class AccountServiceTest {
         User withdrawUser = createUser("계좌이체하는사람", "user1@email.com", "password1");
         User savedWithdrawUser = userRepository.save(withdrawUser);
         Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
-        accountRepository.save(withdrawAccount);
+        Account savedWithdrawAccount = accountRepository.save(withdrawAccount);
 
         User depositUser = createUser("입금받는사람", "user2@email.com", "password2");
         User savedDepositUser = userRepository.save(depositUser);
         Account depositAccount = getAccount(depositAccountNumber, 5678, 1000L, savedDepositUser);
-        accountRepository.save(depositAccount);
+        Account savedDepositAccount = accountRepository.save(depositAccount);
 
         LocalDateTime transferDate = LocalDateTime.now();
-        Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, 100_000L, transferDate);
+        Transaction transaction = makeTransaction(savedWithdrawAccount, savedDepositAccount, 100_000L, transferDate);
         transactionRepository.save(transaction);
 
         TransferCommand transferCommand = TransferCommand.builder()
@@ -409,16 +407,16 @@ class AccountServiceTest {
         User withdrawUser = createUser("계좌이체하는사람", "user1@email.com", "password1");
         User savedWithdrawUser = userRepository.save(withdrawUser);
         Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
-        accountRepository.save(withdrawAccount);
+        Account savedWithdrawAccount = accountRepository.save(withdrawAccount);
 
         User depositUser = createUser("입금받는사람", "user2@email.com", "password2");
         User savedDepositUser = userRepository.save(depositUser);
         Account depositAccount = getAccount(depositAccountNumber, 5678, 1000L, savedDepositUser);
-        accountRepository.save(depositAccount);
+        Account savedDepositAccount = accountRepository.save(depositAccount);
 
         LocalDateTime weekStartDate = LocalDate.now().with(DayOfWeek.MONDAY).atStartOfDay();
         for (int i = 1; i <= 5; i++) {
-            Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, 100_000L, weekStartDate.plusDays(i));
+            Transaction transaction = makeTransaction(savedWithdrawAccount, savedDepositAccount, 100_000L, weekStartDate.plusDays(i));
             transactionRepository.save(transaction);
         }
 
@@ -449,16 +447,16 @@ class AccountServiceTest {
         User withdrawUser = createUser("계좌이체하는사람", "user1@email.com", "password1");
         User savedWithdrawUser = userRepository.save(withdrawUser);
         Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
-        accountRepository.save(withdrawAccount);
+        Account savedWithdrawAccount = accountRepository.save(withdrawAccount);
 
         User depositUser = createUser("입금받는사람", "user2@email.com", "password2");
         User savedDepositUser = userRepository.save(depositUser);
         Account depositAccount = getAccount(depositAccountNumber, 5678, 1000L, savedDepositUser);
-        accountRepository.save(depositAccount);
+        Account savedDepositAccount = accountRepository.save(depositAccount);
 
         LocalDateTime monthStart = LocalDate.now().withDayOfMonth(1).atStartOfDay();
         for (int i = 1; i <= 20; i++) {
-            Transaction transaction = makeTransaction(withdrawAccountNumber, 2222L, 100_000L, monthStart.plusDays(i));
+            Transaction transaction = makeTransaction(savedWithdrawAccount, savedDepositAccount, 100_000L, monthStart.plusDays(i));
             transactionRepository.save(transaction);
         }
 
@@ -557,10 +555,10 @@ class AccountServiceTest {
                 .build();
     }
 
-    private Transaction makeTransaction(long withdrawAccountNumber, long depositAccountNumber, long amount, LocalDateTime transferDate) {
+    private Transaction makeTransaction(Account withdrawAccount, Account depositAccount, long amount, LocalDateTime transferDate) {
         return Transaction.builder()
-                .withdrawAccountNumber(withdrawAccountNumber)
-                .depositAccountNumber(depositAccountNumber)
+                .withdrawAccount(withdrawAccount)
+                .depositAccount(depositAccount)
                 .withdrawAccountBalance(100000L)
                 .amount(amount)
                 .type(TransactionType.TRANSFER)

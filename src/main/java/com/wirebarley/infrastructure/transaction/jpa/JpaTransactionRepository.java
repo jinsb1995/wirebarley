@@ -12,7 +12,7 @@ public interface JpaTransactionRepository extends JpaRepository<TransactionEntit
     @Query("""
         select sum(te.amount)
         from TransactionEntity te
-        where te.withdrawAccountNumber = :withdrawAccountNumber
+        where te.withdrawAccount.accountNumber = :withdrawAccountNumber
         and te.createdAt between :startDate and :endDate
     """)
     Long findTotalAmountByWithdrawAccountBetweenDays(
