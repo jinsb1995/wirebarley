@@ -17,9 +17,8 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.http.MediaType;
 import org.springframework.test.web.servlet.MockMvc;
 
-import static com.wirebarley.fixture.AccountCreateRequestFixture.createRequestFixture;
-import static com.wirebarley.fixture.AccountFixture.createAccountFixture;
-import static com.wirebarley.fixture.UserFixture.createUserFixture;
+import java.time.LocalDateTime;
+
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -58,10 +57,21 @@ class AccountControllerTest {
     @Test
     public void createAccount() throws Exception {
         // given
-        User user = createUserFixture("user1", "user1@email.com");
+
+        User user = User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
         User savedUser = userRepository.save(user);
 
-        AccountCreateRequest request = createRequestFixture(1234, 1000L, savedUser.getId());
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .password(1234)
+                .balance(1000L)
+                .userId(savedUser.getId())
+                .build();
 
         // when
         // then
@@ -84,10 +94,21 @@ class AccountControllerTest {
     @Test
     public void passwordIsRequiredValue() throws Exception {
         // given
-        User user = createUserFixture("user1", "user1@email.com");
+
+        User user = User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
         User savedUser = userRepository.save(user);
 
-        AccountCreateRequest request = createRequestFixture(null, 1000L, savedUser.getId());
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .password(null)
+                .balance(1000L)
+                .userId(savedUser.getId())
+                .build();
 
         // when
         // then
@@ -108,7 +129,12 @@ class AccountControllerTest {
     @Test
     public void userIdIsRequiredValue() throws Exception {
         // given
-        AccountCreateRequest request = createRequestFixture(1234, 1000L, null);
+
+        AccountCreateRequest request = AccountCreateRequest.builder()
+                .password(1234)
+                .balance(1000L)
+                .userId(null)
+                .build();
 
         // when
         // then
@@ -129,10 +155,24 @@ class AccountControllerTest {
     @Test
     public void deleteAccount() throws Exception {
         // given
-        User user = createUserFixture("user1", "user1@email.com");
+
+        User user = User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
         User savedUser = userRepository.save(user);
 
-        Account account = createAccountFixture(1111L, savedUser);
+        Account account = Account.builder()
+                .accountNumber(1111L)
+                .password(1234)
+                .balance(1000L)
+                .user(savedUser)
+                .registeredAt(LocalDateTime.now())
+                .unregisteredAt(null)
+                .build();
         Account savedAccount = accountRepository.save(account);
 
         // when
@@ -154,10 +194,24 @@ class AccountControllerTest {
     public void cannotDeleteOthersAccount() throws Exception {
         // given
         String wrongUserId = "2";
-        User user = createUserFixture("user1", "user1@email.com");
+
+        User user = User.builder()
+                .username("user1")
+                .email("user1@email.com")
+                .password("password")
+                .createdAt(LocalDateTime.now())
+                .modifiedAt(LocalDateTime.now())
+                .build();
         User savedUser = userRepository.save(user);
 
-        Account account = createAccountFixture(1111L, savedUser);
+        Account account = Account.builder()
+                .accountNumber(1111L)
+                .password(1234)
+                .balance(1000L)
+                .user(savedUser)
+                .registeredAt(LocalDateTime.now())
+                .unregisteredAt(null)
+                .build();
         Account savedAccount = accountRepository.save(account);
 
         // when

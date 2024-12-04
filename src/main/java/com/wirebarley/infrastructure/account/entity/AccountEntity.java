@@ -1,6 +1,7 @@
 package com.wirebarley.infrastructure.account.entity;
 
 import com.wirebarley.domain.account.Account;
+import com.wirebarley.domain.user.User;
 import com.wirebarley.infrastructure.common.entity.BaseEntity;
 import com.wirebarley.infrastructure.user.entity.UserEntity;
 import jakarta.persistence.*;
@@ -35,7 +36,8 @@ public class AccountEntity extends BaseEntity {
     private LocalDateTime unregisteredAt; // 계좌 해지일
 
     @Builder
-    private AccountEntity(Long accountNumber, Integer password, Long balance, UserEntity user, LocalDateTime registeredAt, LocalDateTime unregisteredAt) {
+    private AccountEntity(Long id, Long accountNumber, Integer password, Long balance, UserEntity user, LocalDateTime registeredAt, LocalDateTime unregisteredAt) {
+        this.id = id;
         this.accountNumber = accountNumber;
         this.password = password;
         this.balance = balance;
@@ -44,8 +46,12 @@ public class AccountEntity extends BaseEntity {
         this.unregisteredAt = unregisteredAt;
     }
 
-    public static AccountEntity create(Account account, UserEntity userEntity) {
+    public static AccountEntity create(Account account) {
+
+        UserEntity userEntity = UserEntity.of(account.getUser());
+
         return AccountEntity.builder()
+                .id(account.getId())
                 .accountNumber(account.getAccountNumber())
                 .password(account.getPassword())
                 .balance(account.getBalance())

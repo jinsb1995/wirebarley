@@ -26,9 +26,7 @@ public class AccountRepositoryAdapter implements AccountRepository {
 
     @Override
     public Account save(Account account) {
-        User user = account.getUser();
-        UserEntity userEntity = UserEntity.of(user);
-        AccountEntity accountEntity = AccountEntity.create(account, userEntity);
+        AccountEntity accountEntity = AccountEntity.create(account);
         return jpaAccountRepository.save(accountEntity).toDomain();
     }
 
@@ -42,5 +40,12 @@ public class AccountRepositoryAdapter implements AccountRepository {
     @Override
     public void deleteById(Long accountId) {
         jpaAccountRepository.deleteById(accountId);
+    }
+
+    @Override
+    public Account findByAccountNumber(Long accountNumber) {
+        return jpaAccountRepository.findByAccountNumber(accountNumber)
+                .orElseThrow(() -> new CustomException(ACCOUNT_NOT_FOUND_EXCEPTION.getMessage()))
+                .toDomain();
     }
 }

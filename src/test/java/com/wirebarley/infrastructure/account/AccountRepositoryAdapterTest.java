@@ -1,6 +1,5 @@
 package com.wirebarley.infrastructure.account;
 
-import com.wirebarley.config.TestQueryDslConfig;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
@@ -19,7 +18,7 @@ import java.time.LocalDateTime;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@Import({TestQueryDslConfig.class, AccountRepositoryAdapter.class, UserRepositoryAdapter.class})
+@Import({AccountRepositoryAdapter.class, UserRepositoryAdapter.class})
 @DataJpaTest
 class AccountRepositoryAdapterTest {
 

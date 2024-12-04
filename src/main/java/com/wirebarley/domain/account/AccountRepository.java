@@ -8,4 +8,6 @@ public interface AccountRepository {
     Account findById(Long accountId);
 
     void deleteById(Long accountId);
+
+    Account findByAccountNumber(Long accountNumber);
 }
