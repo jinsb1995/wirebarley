@@ -478,6 +478,56 @@ class AccountServiceTest {
                 .hasMessage("월 이체 한도를 초과했습니다.");
     }
 
+    @DisplayName("1000원이 있는 계좌에서 100원씩 이체를 하면 수수료 때문에 9번만 이체를 할 수 있다.")
+    @Test
+    public void concurrencyTestWhileTransfer() throws InterruptedException {
+        // given
+        long withdrawAccountNumber = 1111L;
+        long depositAccountNumber = 2222L;
+        long amount = 100;
+
+        User withdrawUser = createUser("계좌이체하는사람", "user1@email.com", "password1");
+        User savedWithdrawUser = userRepository.save(withdrawUser);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
+        accountRepository.save(withdrawAccount);
+
+        User depositUser = createUser("입금받는사람", "user2@email.com", "password2");
+        User savedDepositUser = userRepository.save(depositUser);
+        Account depositAccount = getAccount(depositAccountNumber, 5678, 1000L, savedDepositUser);
+        accountRepository.save(depositAccount);
+
+        TransferCommand transferCommand = TransferCommand.builder()
+                .withdrawNumber(withdrawAccountNumber)
+                .depositNumber(depositAccountNumber)
+                .userId(savedWithdrawUser.getId())
+                .amount(amount)
+                .accountPassword(withdrawAccount.getPassword())
+                .build();
+
+        // when
+        int threadCount = 12;
+        ExecutorService es = Executors.newFixedThreadPool(5);
+        CountDownLatch countDownLatch = new CountDownLatch(threadCount);
+        AtomicInteger failCount = new AtomicInteger();
+        for (int i = 0; i < threadCount; i++) {
+            es.execute(() -> {
+                try {
+                    accountService.transfer(transferCommand);
+                } catch (Exception e) {
+                    failCount.incrementAndGet();
+                } finally {
+                    countDownLatch.countDown();
+                }
+            });
+        }
+
+        countDownLatch.await();
+        es.shutdown();
+
+        // then
+        assertThat(failCount.get()).isEqualTo(3);
+    }
+
     private User createUser(String user1, String mail, String password) {
         return User.builder()
                 .username(user1)
