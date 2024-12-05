@@ -4,6 +4,7 @@ import com.wirebarley.config.TestJpaAuditingConfig;
 import com.wirebarley.config.TestQueryDslConfig;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.transaction.Transaction;
+import com.wirebarley.domain.transaction.TransactionType;
 import com.wirebarley.domain.transaction.dto.TransactionRetrieveQuery;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.infrastructure.account.AccountRepositoryAdapter;
@@ -65,30 +66,38 @@ class TransactionRepositoryAdapterTest {
 
     @DisplayName("일일 출금한 금액을 조회한다.")
     @Test
-    public void getTotalAmountByOneDay() {
+    public void getTotalAmountByOneDay() throws InterruptedException {
         // given
-        long withdrawAccountNumber1 = 1111L;
+        long accountNumber1 = 1111L;
+        long accountNumber2 = 2222L;
 
-        User user = createUser("user1", "user1@email.com", "password");
-        User savedUser = userRepositoryAdapter.save(user);
-        Account account = createAccount(withdrawAccountNumber1, 1234, 1000L, savedUser);
-        Account savedAccount = accountRepositoryAdapter.save(account);
+        User user1 = createUser("user1", "user1@email.com", "password");
+        User savedUser1 = userRepositoryAdapter.save(user1);
+        Account withdrawAccount = createAccount(accountNumber1, 1234, 1000L, savedUser1);
+        Account savedWithdrawAccount = accountRepositoryAdapter.save(withdrawAccount);
+
+        User user2 = createUser("user2", "user2@email.com", "password");
+        User savedUser2 = userRepositoryAdapter.save(user2);
+        Account depositAccount = createAccount(accountNumber2, 1234, 1000L, savedUser2);
+        Account savrdDepositAccount = accountRepositoryAdapter.save(depositAccount);
 
         Transaction transaction1 = Transaction.builder()
-                .withdrawAccount(savedAccount)
-                .withdrawAccountBalance(100000L)
-                .amount(5000L)
-                .type(DEPOSIT)
-                .sender("ATM")
-                .receiver("user1")
+                .withdrawAccount(savedWithdrawAccount)
+                .withdrawAccountBalance(899L)
+                .amount(100L)
+                .type(WITHDRAW)
+                .sender("user1")
+                .receiver("ATM")
                 .build();
         Transaction transaction2 = Transaction.builder()
-                .withdrawAccount(savedAccount)
-                .withdrawAccountBalance(100000L)
-                .amount(2000L)
-                .type(DEPOSIT)
-                .sender("ATM")
-                .receiver("user1")
+                .withdrawAccount(savedWithdrawAccount)
+                .depositAccount(savrdDepositAccount)
+                .withdrawAccountBalance(899L)
+                .depositAccountBalance(1100L)
+                .amount(100L)
+                .type(TRANSFER)
+                .sender("user1")
+                .receiver("user2")
                 .build();
         transactionRepositoryAdapter.save(transaction1);
         transactionRepositoryAdapter.save(transaction2);
@@ -96,11 +105,18 @@ class TransactionRepositoryAdapterTest {
         LocalDateTime now = LocalDateTime.now();
         LocalDateTime startDate = now.toLocalDate().atStartOfDay();
 
+        Thread.sleep(10); // transaction2를 조회한 시간과 now의 시간이 동일하기 때문에 시간차이를 위해 선언
+        
         // when
-        Long totalAmount = transactionRepositoryAdapter.findTotalAmountByWithdrawAccountBetweenDays(withdrawAccountNumber1, startDate, now);
+        Long totalAmount = transactionRepositoryAdapter.findTotalWithdrawalAmountByWithdrawAccount(
+                savedWithdrawAccount.getAccountNumber(),
+                startDate,
+                now,
+                TransactionType.getWithdrawalTypes()
+        );
 
         // then
-        assertThat(totalAmount).isEqualTo(7000L);
+        assertThat(totalAmount).isEqualTo(200L);
     }
 
     @DisplayName("거래 내역 중 입금 내역을 조회한다.")

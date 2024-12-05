@@ -9,7 +9,7 @@ public interface TransactionRepository {
 
     Transaction save(Transaction transaction);
 
-    Long findTotalAmountByWithdrawAccountBetweenDays(Long accountNumber, LocalDateTime startDate, LocalDateTime endDate);
+    Long findTotalWithdrawalAmountByWithdrawAccount(Long accountNumber, LocalDateTime startDate, LocalDateTime endDate, List<TransactionType> types);
 
     List<Transaction> findTransactions(TransactionRetrieveQuery query);
 }

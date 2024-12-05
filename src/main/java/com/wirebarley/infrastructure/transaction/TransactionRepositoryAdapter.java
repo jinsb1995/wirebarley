@@ -2,6 +2,7 @@ package com.wirebarley.infrastructure.transaction;
 
 import com.wirebarley.domain.transaction.Transaction;
 import com.wirebarley.domain.transaction.TransactionRepository;
+import com.wirebarley.domain.transaction.TransactionType;
 import com.wirebarley.domain.transaction.dto.TransactionRetrieveQuery;
 import com.wirebarley.infrastructure.transaction.entity.TransactionEntity;
 import com.wirebarley.infrastructure.transaction.jpa.JpaTransactionRepository;
@@ -28,8 +29,8 @@ public class TransactionRepositoryAdapter implements TransactionRepository {
     }
 
     @Override
-    public Long findTotalAmountByWithdrawAccountBetweenDays(Long accountNumber, LocalDateTime startDate, LocalDateTime endDate) {
-        Long totalAmount = jpaTransactionRepository.findTotalAmountByWithdrawAccountBetweenDays(accountNumber, startDate, endDate);
+    public Long findTotalWithdrawalAmountByWithdrawAccount(Long accountNumber, LocalDateTime startDate, LocalDateTime endDate, List<TransactionType> types) {
+        Long totalAmount = jpaTransactionRepository.findTotalAmountByWithdrawAccountBetweenDays(accountNumber, startDate, endDate, types);
         return totalAmount == null ? 0 : totalAmount;
     }
 
