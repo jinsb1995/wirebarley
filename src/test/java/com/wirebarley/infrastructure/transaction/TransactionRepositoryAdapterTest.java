@@ -145,7 +145,7 @@ class TransactionRepositoryAdapterTest {
         TransactionRetrieveQuery query = TransactionRetrieveQuery.builder()
                 .offset(0)
                 .count(10)
-                .accountId(1L)
+                .accountId(savedAccount1.getId())
                 .type(DEPOSIT)
                 .build();
         List<Transaction> transactions = transactionRepositoryAdapter.findTransactions(query);
@@ -200,7 +200,7 @@ class TransactionRepositoryAdapterTest {
         TransactionRetrieveQuery query = TransactionRetrieveQuery.builder()
                 .offset(0)
                 .count(10)
-                .accountId(1L)
+                .accountId(savedAccount1.getId())
                 .type(WITHDRAW)
                 .build();
         List<Transaction> transactions = transactionRepositoryAdapter.findTransactions(query);
@@ -255,7 +255,7 @@ class TransactionRepositoryAdapterTest {
         TransactionRetrieveQuery query = TransactionRetrieveQuery.builder()
                 .offset(0)
                 .count(10)
-                .accountId(2L)
+                .accountId(savedAccount1.getId())
                 .type(TRANSFER)
                 .build();
         List<Transaction> transactions = transactionRepositoryAdapter.findTransactions(query);
