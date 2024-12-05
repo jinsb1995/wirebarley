@@ -1,16 +1,17 @@
 package com.wirebarley.presentation.account;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.wirebarley.application.account.dto.request.AccountCreateCommand;
-import com.wirebarley.application.account.dto.request.TransferCommand;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.user.User;
 import com.wirebarley.domain.user.UserRepository;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
+import com.wirebarley.infrastructure.transaction.jpa.JpaTransactionRepository;
 import com.wirebarley.infrastructure.user.jpa.JpaUserRepository;
 import com.wirebarley.presentation.account.dto.request.AccountCreateRequest;
+import com.wirebarley.presentation.account.dto.request.DepositRequest;
 import com.wirebarley.presentation.account.dto.request.TransferRequest;
+import com.wirebarley.presentation.account.dto.request.WithdrawRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
@@ -22,7 +23,6 @@ import org.springframework.test.web.servlet.MockMvc;
 
 import java.time.LocalDateTime;
 
-import static com.wirebarley.domain.transaction.TransactionType.TRANSFER;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
 import static org.springframework.test.web.servlet.result.MockMvcResultHandlers.print;
@@ -51,8 +51,12 @@ class AccountControllerTest {
     @Autowired
     private JpaAccountRepository jpaAccountRepository;
 
+    @Autowired
+    private JpaTransactionRepository jpaTransactionRepository;
+
     @AfterEach
     void tearDown() {
+        jpaTransactionRepository.deleteAllInBatch();
         jpaAccountRepository.deleteAllInBatch();
         jpaUserRepository.deleteAllInBatch();
     }
@@ -251,6 +255,316 @@ class AccountControllerTest {
                 .andExpect(jsonPath("$.data").isEmpty());
     }
 
+    @DisplayName("입금에 성공한다.")
+    @Test
+    public void deposit() throws Exception {
+        // given
+        long depositAccountNumber = 1111L;
+
+        User user = createUser("입금하는사람", "user1@email.com", "password1");
+        User savedUser = userRepository.save(user);
+        Account account = getAccount(depositAccountNumber, 1234, 1000L, savedUser);
+        accountRepository.save(account);
+
+        DepositRequest depositRequest = DepositRequest.builder()
+                .accountNumber(depositAccountNumber)
+                .amount(100L)
+                .sender("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/deposit")
+                                .content(om.writeValueAsString(depositRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.code").value(201),
+                        jsonPath("$.status").value("CREATED"),
+                        jsonPath("$.message").value("success"),
+                        jsonPath("$.data.depositAccountNumber").value(1111),
+                        jsonPath("$.data.amount").value(100),
+                        jsonPath("$.data.depositAccountBalance").value(1100),
+                        jsonPath("$.data.type").value("DEPOSIT"),
+                        jsonPath("$.data.sender").value("ATM"),
+                        jsonPath("$.data.receiver").value("입금하는사람")
+                );
+    }
+
+    @DisplayName("입금할 때 계좌번호는 필수값이다.")
+    @Test
+    public void accountNumberIsRequiredWhenDeposit() throws Exception {
+        // given
+        DepositRequest depositRequest = DepositRequest.builder()
+                .amount(100L)
+                .sender("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/deposit")
+                                .content(om.writeValueAsString(depositRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("입금 계좌번호는 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("입금할 때 입금액은 필수값이다.")
+    @Test
+    public void amountIsRequiredWhenDeposit() throws Exception {
+        // given
+        long depositAccountNumber = 1111L;
+
+        DepositRequest depositRequest = DepositRequest.builder()
+                .accountNumber(depositAccountNumber)
+                .sender("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/deposit")
+                                .content(om.writeValueAsString(depositRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("입금액은 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("입금할 때 보내는 사람은 필수값이다.")
+    @Test
+    public void senderIsRequiredWhenDeposit() throws Exception {
+        // given
+        long depositAccountNumber = 1111L;
+
+        DepositRequest depositRequest = DepositRequest.builder()
+                .accountNumber(depositAccountNumber)
+                .amount(100L)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/deposit")
+                                .content(om.writeValueAsString(depositRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("보내는 사람을 입력해주세요."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("출금에 성공한다.")
+    @Test
+    public void withdraw() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+
+        User withdrawUser = createUser("출금하는사람", "user1@email.com", "password1");
+        User savedWithdrawUser = userRepository.save(withdrawUser);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedWithdrawUser);
+        accountRepository.save(withdrawAccount);
+
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(100L)
+                .userId(savedWithdrawUser.getId())
+                .password(withdrawAccount.getPassword())
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isCreated())
+                .andExpectAll(
+                        jsonPath("$.code").value(201),
+                        jsonPath("$.status").value("CREATED"),
+                        jsonPath("$.message").value("success"),
+                        jsonPath("$.data.withdrawAccountNumber").value(1111),
+                        jsonPath("$.data.amount").value(100),
+                        jsonPath("$.data.withdrawAccountBalance").value(900),
+                        jsonPath("$.data.type").value("WITHDRAW"),
+                        jsonPath("$.data.sender").value("출금하는사람"),
+                        jsonPath("$.data.receiver").value("ATM")
+                );
+    }
+
+    @DisplayName("입금할 때 계좌번호는 필수값이다.")
+    @Test
+    public void accountNumberIsRequiredWhenWithdraw() throws Exception {
+        // given
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .amount(100L)
+                .userId(1L)
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("출금 계좌번호는 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("출금할 때 출금액은 필수값이다.")
+    @Test
+    public void amountIsRequiredWhenWithdraw() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+        
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .accountNumber(withdrawAccountNumber)
+                .userId(1L)
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("출금액은 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("출금할 때 유저정보는 필수값이다.")
+    @Test
+    public void userIdIsRequiredWhenWithdraw() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(100L)
+                .password(1234)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("유저 정보는 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("출금할 때 비밀번호는 필수값이다.")
+    @Test
+    public void passwordIsRequiredWhenWithdraw() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(100L)
+                .userId(1L)
+                .receiver("ATM")
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("비밀번호는 필수값입니다."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
+    @DisplayName("출금할 때 받는 사람 이름은 필수값이다.")
+    @Test
+    public void receiverIsRequiredWhenWithdraw() throws Exception {
+        // given
+        long withdrawAccountNumber = 1111L;
+
+        WithdrawRequest withdrawRequest = WithdrawRequest.builder()
+                .accountNumber(withdrawAccountNumber)
+                .amount(100L)
+                .userId(1L)
+                .password(1234)
+                .build();
+
+        // when
+        // then
+        mvc.perform(
+                        post("/api/v1/account/withdraw")
+                                .content(om.writeValueAsString(withdrawRequest))
+                                .contentType(MediaType.APPLICATION_JSON)
+                )
+                .andDo(print())
+                .andExpect(status().isBadRequest())
+                .andExpectAll(
+                        jsonPath("$.code").value(400),
+                        jsonPath("$.status").value("BAD_REQUEST"),
+                        jsonPath("$.message").value("받는 사람을 입력해주세요."),
+                        jsonPath("$.data").isEmpty()
+                );
+    }
+
     @DisplayName("계좌이체에 성공한다.")
     @Test
     public void transfer() throws Exception {
@@ -289,7 +603,6 @@ class AccountControllerTest {
                         jsonPath("$.code").value(201),
                         jsonPath("$.status").value("CREATED"),
                         jsonPath("$.message").value("success"),
-                        jsonPath("$.data.id").value(1),
                         jsonPath("$.data.withdrawAccountNumber").value(1111),
                         jsonPath("$.data.depositAccountNumber").value(2222),
                         jsonPath("$.data.amount").value(100),
