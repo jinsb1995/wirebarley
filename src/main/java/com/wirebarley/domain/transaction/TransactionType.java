@@ -1,7 +1,9 @@
 package com.wirebarley.domain.transaction;
 
+import com.wirebarley.infrastructure.exception.CustomException;
 import lombok.Getter;
 
+import java.util.Arrays;
 import java.util.List;
 
 @Getter
@@ -14,5 +16,12 @@ public enum TransactionType {
 
     public static List<TransactionType> getWithdrawalTypes() {
         return List.of(WITHDRAW, TRANSFER);
+    }
+
+    public static TransactionType of(String type) {
+        return Arrays.stream(TransactionType.values())
+                .filter(it -> it.name().equals(type))
+                .findFirst()
+                .orElseThrow(() -> new CustomException("올바른 타입을 입력해주세요."));
     }
 }
