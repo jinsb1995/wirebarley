@@ -63,16 +63,16 @@ public class AccountService {
         }
 
         Account findAccount = accountRepository.findByAccountNumber(command.accountNumber());
-
         findAccount.deposit(command.amount());
+        Account savedAccount = accountRepository.save(findAccount);
 
         Transaction transaction = Transaction.builder()
-                .depositAccount(findAccount)
-                .depositAccountBalance(findAccount.getBalance())
+                .depositAccount(savedAccount)
+                .depositAccountBalance(savedAccount.getBalance())
                 .amount(command.amount())
                 .type(TransactionType.DEPOSIT)
                 .sender(command.sender())
-                .receiver(findAccount.getUser().getUsername())
+                .receiver(savedAccount.getUser().getUsername())
                 .build();
 
         Transaction savedTransaction = transactionRepository.save(transaction);
@@ -87,18 +87,18 @@ public class AccountService {
 
         Account findAccount = accountRepository.findByAccountNumber(command.accountNumber());
 
-        Long transferCharge = findAccount.getTransferCharge(command.amount());
         findAccount.checkOwner(command.userId());
         findAccount.checkPassword(command.password());
-        findAccount.checkEnoughBalanceByCharge(command.amount(), transferCharge);
+        findAccount.checkEnoughBalanceByCharge(command.amount(), 0L);
         findAccount.withdraw(command.amount(), 0L);
+        Account savedAccount = accountRepository.save(findAccount);
 
         Transaction transaction = Transaction.builder()
-                .withdrawAccount(findAccount)
-                .withdrawAccountBalance(findAccount.getBalance())
+                .withdrawAccount(savedAccount)
+                .withdrawAccountBalance(savedAccount.getBalance())
                 .amount(command.amount())
                 .type(TransactionType.WITHDRAW)
-                .sender(findAccount.getUser().getUsername())
+                .sender(savedAccount.getUser().getUsername())
                 .receiver(command.receiver())
                 .build();
 

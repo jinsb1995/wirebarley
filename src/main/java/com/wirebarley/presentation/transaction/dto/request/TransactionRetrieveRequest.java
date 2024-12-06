@@ -5,6 +5,8 @@ import com.wirebarley.domain.transaction.TransactionType;
 import jakarta.validation.constraints.NotNull;
 import lombok.Builder;
 
+import static com.wirebarley.infrastructure.common.StringUtils.isBlank;
+
 @Builder
 public record TransactionRetrieveRequest(
 
@@ -29,7 +31,7 @@ public record TransactionRetrieveRequest(
             count = 10;
         }
 
-        if (type == null) {
+        if (isBlank(type)) {
             type = TransactionType.ALL.name();
         }
     }
