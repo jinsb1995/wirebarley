@@ -8,6 +8,6 @@ public class ApiDocsController {
 
     @GetMapping("/api-docs")
     public String apiDocs() {
-        return "docs/index.html";
+        return "/docs/index.html";
     }
 }
