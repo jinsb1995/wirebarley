@@ -2,11 +2,9 @@ package com.wirebarley.infrastructure.account;
 
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
-import com.wirebarley.domain.user.User;
 import com.wirebarley.infrastructure.account.entity.AccountEntity;
 import com.wirebarley.infrastructure.account.jpa.JpaAccountRepository;
 import com.wirebarley.infrastructure.exception.CustomException;
-import com.wirebarley.infrastructure.user.entity.UserEntity;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Repository;
 

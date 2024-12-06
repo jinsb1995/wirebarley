@@ -1,0 +1,27 @@
+version: '1'
+
+services:
+  app:
+    build: .
+    ports:
+      - "8080:8080"
+    depends_on:
+      - mysql
+    restart: on-failure
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://wirebarley_mysql:3306/wirebarley?allowPublicKeyRetrieval=true
+      SPRING_DATASOURCE_USERNAME: root
+      SPRING_DATASOURCE_PASSWORD: 1111
+
+
+  mysql:
+    image: mysql:latest
+    container_name: wirebarley_mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: 1111
+      MYSQL_DATABASE: wirebarley
+    volumes:
+      - ./init.sh:/docker/init.sh
+    ports:
+      - "3307:3306"
+

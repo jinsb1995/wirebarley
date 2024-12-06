@@ -4,25 +4,21 @@ spring:
     default: test
 
   datasource:
-    url: jdbc:h2:mem:~/wirebarley;MODE=MySQL
-    driver-class-name: org.h2.Driver
-    username: sa
-    password:
+    url: jdbc:mysql://localhost:3307/wirebarley
+    driver-class-name: com.mysql.cj.jdbc.Driver
+    username: root
+    password: 1111
 
   jpa:
     hibernate:
-      ddl-auto: create-drop
+      ddl-auto: none
     show-sql: true
     properties:
       hibernate:
         show_sql: true
         format_sql: true
+        dialect: org.hibernate.dialect.MySQLDialect
     defer-datasource-initialization: true
-
-  h2:
-    console:
-      enabled: true
-
 
 logging:
   level:
