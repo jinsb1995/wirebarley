@@ -1,0 +1,147 @@
+= EndAnd App API Documentation
+:doctype: book
+::
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 1
+:sectlinks:
+:operation-api-summary-title: [white]#Endpoint#
+:operation-notes-title: [red]#Notes#
+:operation-path-parameters-title: [yellow]#Request URL path parameters#
+:operation-request-headers-title: [yellow]#Request headers#
+:operation-request-parameters-title: [yellow]#Request parameters#
+:operation-request-fields-title: [yellow]#Request body#
+:operation-implicit-parameters-title: [yellow]#Implicit Parameters#
+:operation-response-summary-title: [green]#Response summary#
+:operation-response-headers-title: [green]#Response headers#
+:operation-response-fields-title: [green]#Response body#
+
+[[enum1]]
+== 거래내역 조회 종류
+[cols="2,2"]
+|===
+|Enum|Description
+
+|WITHDRAW
+|출금 내역
+
+|DEPOSIT
+|입금 내역
+
+|TRANSFER
+|이체 내역
+
+|ALL
+|전체
+|===
+
+= User
+[[retrieveUser]]
+== 유저 목록 조회
+
+=== EndPoint
+- [Get] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/users
+
+=== Response
+Status Code: 200
+
+operation::retrieve-users[snippets='response-headers,response-fields']
+
+
+= Transaction
+[[retrieveTransaction]]
+== 거래 내역 조회
+
+=== EndPoint
+- [Get] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/transactions
+
+=== Request
+operation::retrieve-transactions[snippets='request-headers,query-parameters']
+
+=== Response
+Status Code: 200
+
+operation::retrieve-transactions[snippets='response-headers,response-fields']
+
+
+
+= Account
+[[createAccount]]
+== 계좌 생성
+
+=== EndPoint
+- [Post] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/account
+
+=== Request
+operation::create-account[snippets='request-headers,request-fields']
+
+
+=== Response
+Status Code: 201
+
+operation::create-account[snippets='response-headers,response-fields']
+
+
+[[deleteAccount]]
+== 계좌 삭제
+
+=== EndPoint
+- [Delete] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/account/+{id}+
+
+=== Request
+operation::delete-account[snippets='request-headers,path-parameters,query-parameters']
+
+
+=== Response
+Status Code: 200
+
+operation::delete-account[snippets='response-headers,response-fields']
+
+
+[[deposit]]
+== 입금
+
+=== EndPoint
+- [Post] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/account/deposit
+
+=== Request
+operation::deposit[snippets='request-headers,request-fields']
+
+
+=== Response
+Status Code: 201
+
+operation::deposit[snippets='response-headers,response-fields']
+
+
+[[withdraw]]
+== 출금
+
+=== EndPoint
+- [Post] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/account/withdraw
+
+=== Request
+operation::deposit[snippets='request-headers,request-fields']
+
+
+=== Response
+Status Code: 201
+
+operation::deposit[snippets='response-headers,response-fields']
+
+
+[[transfer]]
+== 이체
+
+=== EndPoint
+- [Post] &nbsp;&nbsp;&nbsp;&nbsp;/api/v1/account/transfer
+
+=== Request
+operation::deposit[snippets='request-headers,request-fields']
+
+
+=== Response
+Status Code: 201
+
+operation::deposit[snippets='response-headers,response-fields']

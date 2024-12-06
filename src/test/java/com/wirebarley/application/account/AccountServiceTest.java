@@ -6,8 +6,8 @@ import com.wirebarley.application.account.dto.request.TransferCommand;
 import com.wirebarley.application.account.dto.request.WithdrawCommand;
 import com.wirebarley.application.account.dto.response.AccountResponse;
 import com.wirebarley.application.account.dto.response.DepositResponse;
-import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.application.account.dto.response.WithdrawResponse;
+import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
 import com.wirebarley.domain.transaction.Transaction;
@@ -295,7 +295,7 @@ class AccountServiceTest {
                 .hasMessage("계좌 비밀번호 검증에 실패했습니다.");
     }
 
-    @DisplayName("계좌이체시 출금계좌 잔액이 이체할 금액보다 적으면 예외가 발생한다.")
+    @DisplayName("출금 시 출금계좌 잔액이 출금할 금액보다 적으면 예외가 발생한다.")
     @Test
     public void withdrawCheckEnoughBalance() {
         // given
@@ -304,7 +304,7 @@ class AccountServiceTest {
 
         User user = createUser("출금하는사람", "user1@email.com", "password1");
         User savedUser = userRepository.save(user);
-        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 1000L, savedUser);
+        Account withdrawAccount = getAccount(withdrawAccountNumber, 1234, 100L, savedUser);
         accountRepository.save(withdrawAccount);
 
         WithdrawCommand withdrawCommand = WithdrawCommand.builder()
