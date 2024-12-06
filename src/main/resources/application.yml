@@ -25,6 +25,3 @@ spring:
         show_sql: true
         format_sql: true
         dialect: org.hibernate.dialect.MySQLDialect
-
-  mvc:
-    static-path-pattern: /static/docs/index.html
