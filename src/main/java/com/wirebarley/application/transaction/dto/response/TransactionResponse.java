@@ -1,4 +1,4 @@
-package com.wirebarley.application.account.dto.response;
+package com.wirebarley.application.transaction.dto.response;
 
 import com.wirebarley.domain.transaction.Transaction;
 import com.wirebarley.domain.transaction.TransactionType;

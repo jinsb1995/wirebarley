@@ -1,6 +1,6 @@
 package com.wirebarley.presentation.transaction;
 
-import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.application.transaction.TransactionService;
 import com.wirebarley.infrastructure.common.ApiResponse;
 import com.wirebarley.presentation.transaction.dto.request.TransactionRetrieveRequest;

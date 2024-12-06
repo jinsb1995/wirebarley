@@ -1,6 +1,6 @@
 package com.wirebarley.application.transaction;
 
-import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.application.transaction.dto.request.TransactionRetrieveCommand;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;

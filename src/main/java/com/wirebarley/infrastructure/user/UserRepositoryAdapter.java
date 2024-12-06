@@ -39,4 +39,12 @@ public class UserRepositoryAdapter implements UserRepository {
                 .orElseThrow(() -> new CustomException(USER_NOT_FOUND_EXCEPTION.getMessage()))
                 .toDomain();
     }
+
+    @Override
+    public List<User> findAll() {
+        return jpaUserRepository.findAll()
+                .stream()
+                .map(UserEntity::toDomain)
+                .toList();
+    }
 }

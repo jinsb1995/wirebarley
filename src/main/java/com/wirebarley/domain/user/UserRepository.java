@@ -9,4 +9,6 @@ public interface UserRepository {
     List<User> saveAll(List<User> user);
 
     User findById(Long userId);
+
+    List<User> findAll();
 }

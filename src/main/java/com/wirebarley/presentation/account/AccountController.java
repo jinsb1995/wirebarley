@@ -3,7 +3,7 @@ package com.wirebarley.presentation.account;
 import com.wirebarley.application.account.AccountService;
 import com.wirebarley.application.account.dto.response.AccountResponse;
 import com.wirebarley.application.account.dto.response.DepositResponse;
-import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.application.account.dto.response.WithdrawResponse;
 import com.wirebarley.infrastructure.common.ApiResponse;
 import com.wirebarley.presentation.account.dto.request.*;

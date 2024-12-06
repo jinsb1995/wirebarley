@@ -6,7 +6,7 @@ import com.wirebarley.application.account.dto.request.TransferCommand;
 import com.wirebarley.application.account.dto.request.WithdrawCommand;
 import com.wirebarley.application.account.dto.response.AccountResponse;
 import com.wirebarley.application.account.dto.response.DepositResponse;
-import com.wirebarley.application.account.dto.response.TransactionResponse;
+import com.wirebarley.application.transaction.dto.response.TransactionResponse;
 import com.wirebarley.application.account.dto.response.WithdrawResponse;
 import com.wirebarley.domain.account.Account;
 import com.wirebarley.domain.account.AccountRepository;
