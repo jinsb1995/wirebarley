@@ -20,8 +20,6 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: 1111
       MYSQL_DATABASE: wirebarley
-    volumes:
-      - ./init.sh:/docker/init.sh
     ports:
       - "3307:3306"
 
